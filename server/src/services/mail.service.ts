@@ -15,7 +15,9 @@ const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
  */
 const emailResetPasswordLink = async (email: string, token: string) => {
   // Email sending disabled
-  console.log(`[Email Disabled] Would send reset password link to ${email} with token ${token}`);
+  console.log(
+    `[Email Disabled] Would send reset password link to ${email} with token ${token}`,
+  );
   console.log(`Reset link would be: ${baseUrl}/reset-password/${token}`);
   return Promise.resolve();
 };
@@ -28,7 +30,9 @@ const emailResetPasswordLink = async (email: string, token: string) => {
  */
 const emailVerificationLink = async (email: string, token: string) => {
   // Email sending disabled
-  console.log(`[Email Disabled] Would send verification link to ${email} with token ${token}`);
+  console.log(
+    `[Email Disabled] Would send verification link to ${email} with token ${token}`,
+  );
   console.log(`Verification link would be: ${baseUrl}/verify-account/${token}`);
   return Promise.resolve();
 };
@@ -41,7 +45,9 @@ const emailVerificationLink = async (email: string, token: string) => {
  */
 const emailInviteLink = async (email: string, token: string) => {
   // Email sending disabled
-  console.log(`[Email Disabled] Would send invite link to ${email} with token ${token}`);
+  console.log(
+    `[Email Disabled] Would send invite link to ${email} with token ${token}`,
+  );
   console.log(`Invite link would be: ${baseUrl}/invite/${token}`);
   return Promise.resolve();
 };

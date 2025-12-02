@@ -176,7 +176,6 @@ const inviteUser = async (
 
   function sendInvite(combinedList: any[]) {
     // Email sending disabled - invites are created but not sent via email
-    return;
   }
 
   try {

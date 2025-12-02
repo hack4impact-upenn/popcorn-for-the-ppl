@@ -7,6 +7,8 @@ import {
   ingestTypeformOrders,
   getAllOrders,
   deleteAllOrders,
+  getOrderById,
+  updateOrder,
 } from '../controllers/order.controller.ts';
 import { isAuthenticated } from '../controllers/auth.middleware.ts';
 
@@ -32,5 +34,16 @@ router.post('/ingest/:formId', isAuthenticated, ingestTypeformOrders);
  */
 router.delete('/all', isAuthenticated, deleteAllOrders);
 
-export default router;
+/**
+ * A GET route to fetch a single order by ID (orderId/uuid) or name.
+ * Requires authentication.
+ */
+router.get('/:id', isAuthenticated, getOrderById);
 
+/**
+ * A PUT route to update an order by ID (orderId/uuid).
+ * Requires authentication.
+ */
+router.put('/:id', isAuthenticated, updateOrder);
+
+export default router;

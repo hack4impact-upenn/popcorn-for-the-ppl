@@ -1,4 +1,4 @@
-import { getData, postData, deleteData } from '../util/api.tsx';
+import { getData, postData, deleteData, putData } from '../util/api.tsx';
 
 /**
  * API functions for order management
@@ -47,6 +47,7 @@ export async function fetchOrderHistory() {
 /**
  * Fetch order statistics for graphs
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function fetchOrderStatistics(_orderType: string) {
   // TODO: Connect to backend endpoint
   // const response = await getData(`orders/statistics?type=${orderType}`);
@@ -57,4 +58,24 @@ export async function fetchOrderStatistics(_orderType: string) {
     data: [],
     error: null,
   };
+}
+
+/**
+ * Fetch a single order by ID (orderId/uuid) or name
+ * @param id - The order ID (orderId/uuid) or name to search for
+ */
+export async function fetchOrderById(id: string) {
+  const response = await getData(`orders/${id}`);
+  return response;
+}
+
+/**
+ * Update an order by ID
+ * @param id - The order ID (orderId/uuid) to update
+ * @param orderData - The order data to update
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function updateOrder(id: string, orderData: any) {
+  const response = await putData(`orders/${id}`, orderData);
+  return response;
 }

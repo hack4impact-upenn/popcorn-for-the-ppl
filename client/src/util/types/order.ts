@@ -59,4 +59,3 @@ export interface OrderFilters {
   };
   status?: OrderStatus | '';
 }
-

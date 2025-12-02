@@ -1,6 +1,6 @@
 /**
  * Test script for the order ingestion endpoint
- * 
+ *
  * Usage:
  * 1. Make sure you have axios installed: npm install axios
  * 2. Set TYPEFORM_API_KEY in your .env file
@@ -28,7 +28,7 @@ const axiosInstance = axios.create({
 async function testOrderIngestion() {
   try {
     console.log('Step 1: Logging in...');
-    
+
     // Login first
     const loginResponse = await axiosInstance.post('/api/auth/login', {
       email: EMAIL,
@@ -39,21 +39,20 @@ async function testOrderIngestion() {
     console.log('User:', loginResponse.data);
 
     console.log('\nStep 2: Ingesting orders from Typeform...');
-    
+
     // Call the ingest endpoint
     const ingestResponse = await axiosInstance.post(
-      `/api/orders/ingest/${FORM_ID}`
+      `/api/orders/ingest/${FORM_ID}`,
     );
 
     console.log('✓ Ingestion successful!');
     console.log('\nResponse:', JSON.stringify(ingestResponse.data, null, 2));
 
     console.log('\nStep 3: Verifying orders in database...');
-    
+
     // Optionally, fetch orders to verify
     // Note: You'll need to create a GET endpoint for this, or check MongoDB directly
     console.log('Check MongoDB or create a GET /api/orders endpoint to verify');
-
   } catch (error) {
     if (error.response) {
       console.error('Error:', error.response.status, error.response.statusText);
@@ -68,4 +67,3 @@ async function testOrderIngestion() {
 }
 
 testOrderIngestion();
-

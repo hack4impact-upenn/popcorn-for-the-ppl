@@ -1,6 +1,6 @@
 /**
  * Script to delete all orders from the database and reingest from Typeform
- * 
+ *
  * Usage:
  * 1. Make sure you have axios installed: npm install axios
  * 2. Set TYPEFORM_API_KEY in your .env file
@@ -28,7 +28,7 @@ const axiosInstance = axios.create({
 async function deleteAndReingestOrders() {
   try {
     console.log('Step 1: Logging in...');
-    
+
     // Login first
     const loginResponse = await axiosInstance.post('/api/auth/login', {
       email: EMAIL,
@@ -39,25 +39,24 @@ async function deleteAndReingestOrders() {
     console.log('User:', loginResponse.data);
 
     console.log('\nStep 2: Deleting all orders from database...');
-    
+
     // Delete all orders
     const deleteResponse = await axiosInstance.delete('/api/orders/all');
-    
+
     console.log('✓ Deletion successful!');
     console.log('Deleted orders:', deleteResponse.data.deletedCount);
 
     console.log('\nStep 3: Ingesting orders from Typeform...');
-    
+
     // Call the ingest endpoint
     const ingestResponse = await axiosInstance.post(
-      `/api/orders/ingest/${FORM_ID}`
+      `/api/orders/ingest/${FORM_ID}`,
     );
 
     console.log('✓ Ingestion successful!');
     console.log('\nResponse:', JSON.stringify(ingestResponse.data, null, 2));
 
     console.log('\n✅ Complete! All orders have been deleted and reingested.');
-
   } catch (error) {
     if (error.response) {
       console.error('Error:', error.response.status, error.response.statusText);
@@ -72,4 +71,3 @@ async function deleteAndReingestOrders() {
 }
 
 deleteAndReingestOrders();
-

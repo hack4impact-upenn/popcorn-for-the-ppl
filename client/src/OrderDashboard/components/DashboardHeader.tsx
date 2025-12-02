@@ -77,6 +77,19 @@ function DashboardHeader() {
           >
             Order Management
           </Button>
+          <Button
+            component={Link}
+            to="/pricing-management"
+            sx={{
+              color: COLORS.white,
+              textTransform: 'none',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              },
+            }}
+          >
+            Pricing Management
+          </Button>
           <TextField
             placeholder="Search"
             size="small"

@@ -102,7 +102,9 @@ function mapTypeformResponseToOrder(
 
     if (!answers || answers.length < 4) {
       console.warn(
-        `Not enough answers for response ${response_id}. Found ${answers?.length || 0} answers`,
+        `Not enough answers for response ${response_id}. Found ${
+          answers?.length || 0
+        } answers`,
       );
       return null;
     }
@@ -113,7 +115,7 @@ function mapTypeformResponseToOrder(
     const firstName = answers[0]?.text || '';
     const lastName = answers[1]?.text || '';
     const phoneNumber = answers[2]?.phone_number || '';
-    
+
     // Email might be at index 3, but let's also check for email type
     let email = answers[3]?.email || '';
     if (!email) {
@@ -123,18 +125,19 @@ function mapTypeformResponseToOrder(
     }
 
     if (!email) {
+      console.error(`❌ No email found for response ${response_id}`);
       console.error(
-        `❌ No email found for response ${response_id}`,
+        `   Answers structure:`,
+        answers.map((a, idx) => ({
+          index: idx,
+          type: a.type,
+          fieldType: a.field?.type,
+          fieldId: a.field?.id,
+          hasText: !!a.text,
+          hasEmail: !!a.email,
+          hasPhone: !!a.phone_number,
+        })),
       );
-      console.error(`   Answers structure:`, answers.map((a, idx) => ({
-        index: idx,
-        type: a.type,
-        fieldType: a.field?.type,
-        fieldId: a.field?.id,
-        hasText: !!a.text,
-        hasEmail: !!a.email,
-        hasPhone: !!a.phone_number,
-      })));
       return null;
     }
 
@@ -182,27 +185,27 @@ function mapTypeformResponseToOrder(
 
     // Extract amountPaid and discountPrice from variables (matching test.js logic)
     // variables[0] = discountPrice, variables[1] = amountPaid
-    console.log(variables)
-    console.log("AAAAA")
+    console.log(variables);
+    console.log('AAAAA');
     const amountPaid = variables[1]?.number ?? 0;
     const discountPrice = variables[0]?.number ?? 0;
 
-          return {
-            orderId: response_id, // Use uuid as orderId
-            uuid: response_id,
-            email,
-            firstName,
-            lastName,
-            name,
-            phoneNumber,
-            company,
-            discountCode,
-            amountPaid,
-            discountPrice,
-            status: 'Inquiry' as const,
-            popcornQuantities,
-            submittedAt: new Date(submitted_at),
-          };
+    return {
+      orderId: response_id, // Use uuid as orderId
+      uuid: response_id,
+      email,
+      firstName,
+      lastName,
+      name,
+      phoneNumber,
+      company,
+      discountCode,
+      amountPaid,
+      discountPrice,
+      status: 'Inquiry' as const,
+      popcornQuantities,
+      submittedAt: new Date(submitted_at),
+    };
   } catch (error) {
     console.error('Error mapping Typeform response:', error);
     return null;
@@ -224,9 +227,7 @@ const ingestTypeformOrders = async (
 
     if (!typeformApiKey) {
       next(
-        ApiError.internal(
-          'TYPEFORM_API_KEY environment variable is not set',
-        ),
+        ApiError.internal('TYPEFORM_API_KEY environment variable is not set'),
       );
       return;
     }
@@ -253,27 +254,35 @@ const ingestTypeformOrders = async (
     console.log(`Processing ${items.length} responses from Typeform`);
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      console.log(`\n[${i + 1}/${items.length}] Processing response: ${item.response_id}`);
+      console.log(
+        `\n[${i + 1}/${items.length}] Processing response: ${item.response_id}`,
+      );
       console.log(`  Submitted at: ${item.submitted_at}`);
       console.log(`  Answers count: ${item.answers?.length || 0}`);
-      
+
       // Check if order already exists
-      console.log(item)
+      console.log(item);
       const existingOrder = await Order.findOne({ uuid: item.response_id });
       if (existingOrder) {
         console.log(`  ⚠️  Order ${item.response_id} already exists in DB`);
-        console.log(`     Existing order: ${existingOrder.email} - ${existingOrder.name}`);
+        console.log(
+          `     Existing order: ${existingOrder.email} - ${existingOrder.name}`,
+        );
         console.log(`     Existing order _id: ${existingOrder._id}`);
         skippedOrders.push(item.response_id);
         continue;
       }
-      console.log(`  ✅ Order ${item.response_id} is NEW (not in DB), will process`);
+      console.log(
+        `  ✅ Order ${item.response_id} is NEW (not in DB), will process`,
+      );
 
       // Map Typeform response to Order format
       console.log(`  Mapping order...`);
       const orderData = mapTypeformResponseToOrder(item);
       if (!orderData) {
-        console.error(`  ❌ FAILED TO MAP order ${item.response_id} - will skip`);
+        console.error(
+          `  ❌ FAILED TO MAP order ${item.response_id} - will skip`,
+        );
         console.error(`  Response data:`, {
           response_id: item.response_id,
           answers_count: item.answers?.length || 0,
@@ -283,8 +292,12 @@ const ingestTypeformOrders = async (
         skippedOrders.push(item.response_id);
         continue;
       }
-      console.log(`  ✅ Successfully mapped: ${orderData.email} (${orderData.name})`);
-      console.log(`     Mapped data: uuid=${orderData.uuid}, firstName=${orderData.firstName}, lastName=${orderData.lastName}`);
+      console.log(
+        `  ✅ Successfully mapped: ${orderData.email} (${orderData.name})`,
+      );
+      console.log(
+        `     Mapped data: uuid=${orderData.uuid}, firstName=${orderData.firstName}, lastName=${orderData.lastName}`,
+      );
 
       // Create and save order
       try {
@@ -293,9 +306,14 @@ const ingestTypeformOrders = async (
         const order = new Order(orderData);
         console.log(order);
         const savedOrder = await order.save();
-        console.log(`  💾✅ SUCCESSFULLY SAVED: ${savedOrder.uuid} - ${savedOrder.email}`);
+        console.log(
+          `  💾✅ SUCCESSFULLY SAVED: ${savedOrder.uuid} - ${savedOrder.email}`,
+        );
         console.log(`     MongoDB _id: ${savedOrder._id}`);
-        console.log(`     Verified in DB:`, await Order.findOne({ uuid: savedOrder.uuid }) ? 'YES' : 'NO');
+        console.log(
+          `     Verified in DB:`,
+          (await Order.findOne({ uuid: savedOrder.uuid })) ? 'YES' : 'NO',
+        );
         newOrders.push(savedOrder);
       } catch (saveError: any) {
         console.error(`  ❌❌ ERROR SAVING order ${item.response_id}:`);
@@ -303,13 +321,21 @@ const ingestTypeformOrders = async (
         console.error(`     Code: ${saveError.code}`);
         console.error(`     Name: ${saveError.name}`);
         if (saveError.code === 11000) {
-          console.error(`     ⚠️  DUPLICATE KEY ERROR - order with this UUID may already exist`);
+          console.error(
+            `     ⚠️  DUPLICATE KEY ERROR - order with this UUID may already exist`,
+          );
           // Check if it actually exists
           const checkOrder = await Order.findOne({ uuid: item.response_id });
-          console.error(`     Order exists check:`, checkOrder ? `YES (${checkOrder.email})` : 'NO');
+          console.error(
+            `     Order exists check:`,
+            checkOrder ? `YES (${checkOrder.email})` : 'NO',
+          );
         }
         if (saveError.errors) {
-          console.error(`     Validation errors:`, JSON.stringify(saveError.errors, null, 2));
+          console.error(
+            `     Validation errors:`,
+            JSON.stringify(saveError.errors, null, 2),
+          );
         }
         if (saveError.keyPattern) {
           console.error(`     Duplicate key pattern:`, saveError.keyPattern);
@@ -321,12 +347,17 @@ const ingestTypeformOrders = async (
 
     // Verify all orders are in database
     const totalInDB = await Order.countDocuments({});
-    console.log(`\n📊 Summary: ${newOrders.length} new orders, ${skippedOrders.length} skipped`);
+    console.log(
+      `\n📊 Summary: ${newOrders.length} new orders, ${skippedOrders.length} skipped`,
+    );
     console.log(`📦 Total orders in database: ${totalInDB}`);
     console.log(`📥 Total responses from Typeform: ${items.length}`);
-    
+
     if (newOrders.length > 0) {
-      console.log(`✅ New order UUIDs:`, newOrders.map((o) => o.uuid));
+      console.log(
+        `✅ New order UUIDs:`,
+        newOrders.map((o) => o.uuid),
+      );
     }
     if (skippedOrders.length > 0) {
       console.log(`⏭️  Skipped UUIDs:`, skippedOrders);
@@ -335,16 +366,22 @@ const ingestTypeformOrders = async (
       for (const skippedUuid of skippedOrders) {
         const exists = await Order.findOne({ uuid: skippedUuid });
         if (exists) {
-          console.log(`   ${skippedUuid}: EXISTS in DB (${exists.email}) - correctly skipped`);
+          console.log(
+            `   ${skippedUuid}: EXISTS in DB (${exists.email}) - correctly skipped`,
+          );
         } else {
-          console.log(`   ${skippedUuid}: NOT in DB - was skipped due to mapping/save failure!`);
+          console.log(
+            `   ${skippedUuid}: NOT in DB - was skipped due to mapping/save failure!`,
+          );
         }
       }
     }
-    
+
     // List all orders in DB
     const allOrdersInDB = await Order.find({}).select('uuid email name').exec();
-    console.log(`\n📋 All orders currently in database (${allOrdersInDB.length}):`);
+    console.log(
+      `\n📋 All orders currently in database (${allOrdersInDB.length}):`,
+    );
     if (allOrdersInDB.length === 0) {
       console.log(`   ⚠️  NO ORDERS IN DATABASE!`);
     } else {
@@ -394,19 +431,32 @@ const getAllOrders = async (
   try {
     // Verify MongoDB connection
     const connectionState = mongoose.connection.readyState;
-    console.log(`MongoDB connection state: ${connectionState} (0=disconnected, 1=connected, 2=connecting, 3=disconnecting)`);
-    
+    console.log(
+      `MongoDB connection state: ${connectionState} (0=disconnected, 1=connected, 2=connecting, 3=disconnecting)`,
+    );
+
     const orders = await Order.find({}).sort({ submittedAt: -1 }).exec();
     console.log(`\n=== FETCHING ORDERS ===`);
     console.log(`Found ${orders.length} orders in database`);
-    
+
     // Log order UUIDs and emails for debugging
     if (orders.length > 0) {
-      console.log('Order UUIDs in database:', orders.map((o) => o.uuid));
-      console.log('Order emails in database:', orders.map((o) => o.email));
-      console.log('Order names in database:', orders.map((o) => o.name));
+      console.log(
+        'Order UUIDs in database:',
+        orders.map((o) => o.uuid),
+      );
+      console.log(
+        'Order emails in database:',
+        orders.map((o) => o.email),
+      );
+      console.log(
+        'Order names in database:',
+        orders.map((o) => o.name),
+      );
       orders.forEach((order, idx) => {
-        console.log(`  [${idx + 1}] ${order.uuid}: ${order.email} - ${order.name}`);
+        console.log(
+          `  [${idx + 1}] ${order.uuid}: ${order.email} - ${order.name}`,
+        );
       });
     } else {
       console.warn('⚠️  No orders found in database!');
@@ -443,14 +493,21 @@ const getAllOrders = async (
     });
 
     console.log(`Returning ${ordersData.length} orders to frontend`);
-    console.log(`Orders data:`, JSON.stringify(ordersData.map(o => ({ uuid: o.uuid, email: o.email })), null, 2));
-    
+    console.log(
+      `Orders data:`,
+      JSON.stringify(
+        ordersData.map((o) => ({ uuid: o.uuid, email: o.email })),
+        null,
+        2,
+      ),
+    );
+
     // Explicitly ensure it's an array
     if (!Array.isArray(ordersData)) {
       console.error('ERROR: ordersData is not an array!', typeof ordersData);
       return res.status(StatusCode.OK).json([]);
     }
-    
+
     res.status(StatusCode.OK).json(ordersData);
   } catch (error: any) {
     console.error('Error in getAllOrders:', error);
@@ -471,7 +528,7 @@ const deleteAllOrders = async (
     const result = await Order.deleteMany({});
     console.log(`\n=== DELETING ALL ORDERS ===`);
     console.log(`Deleted ${result.deletedCount} orders from database`);
-    
+
     res.status(StatusCode.OK).json({
       message: 'All orders deleted successfully',
       deletedCount: result.deletedCount,
@@ -482,5 +539,182 @@ const deleteAllOrders = async (
   }
 };
 
-export { ingestTypeformOrders, getAllOrders, deleteAllOrders };
+/**
+ * Controller function to get a single order by ID (orderId/uuid) or name
+ */
+const getOrderById = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  try {
+    const { id } = req.params;
 
+    if (!id) {
+      next(ApiError.badRequest('Order ID or name is required'));
+      return;
+    }
+
+    // Try to find by orderId, uuid, or name
+    const order = await Order.findOne({
+      $or: [
+        { orderId: id },
+        { uuid: id },
+        { name: { $regex: id, $options: 'i' } }, // Case-insensitive name search
+      ],
+    }).exec();
+
+    if (!order) {
+      next(ApiError.notFound(`Order with ID or name "${id}" not found`));
+      return;
+    }
+
+    // Transform to match frontend IOrder interface
+    const popcornQuantities = order.popcornQuantities || {
+      caramel: 0,
+      respresso: 0,
+      butter: 0,
+      cheddar: 0,
+      kettle: 0,
+    };
+
+    const orderData = {
+      orderId: order.orderId || order.uuid || '',
+      uuid: order.uuid || '',
+      email: order.email || '',
+      firstName: order.firstName || '',
+      lastName: order.lastName || '',
+      name: order.name || '',
+      phoneNumber: order.phoneNumber || '',
+      company: order.company || '',
+      discountCode: order.discountCode || '',
+      discountPrice: order.discountPrice || 0,
+      amountPaid: order.amountPaid || 0,
+      status: order.status || 'Inquiry',
+      popcornQuantities,
+      submittedAt: order.submittedAt
+        ? order.submittedAt.toISOString()
+        : new Date().toISOString(),
+      createdAt: order.createdAt
+        ? order.createdAt.toISOString()
+        : new Date().toISOString(),
+      updatedAt: order.updatedAt
+        ? order.updatedAt.toISOString()
+        : new Date().toISOString(),
+    };
+
+    res.status(StatusCode.OK).json(orderData);
+  } catch (error: any) {
+    console.error('Error in getOrderById:', error);
+    next(ApiError.internal(`Error fetching order: ${error.message}`));
+  }
+};
+
+/**
+ * Controller function to update an order by ID (orderId/uuid)
+ */
+const updateOrder = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    if (!id) {
+      next(ApiError.badRequest('Order ID is required'));
+      return;
+    }
+
+    // Find order by orderId or uuid
+    const order = await Order.findOne({
+      $or: [{ orderId: id }, { uuid: id }],
+    }).exec();
+
+    if (!order) {
+      next(ApiError.notFound(`Order with ID "${id}" not found`));
+      return;
+    }
+
+    // Prepare update object, excluding fields that shouldn't be updated
+    const allowedFields = [
+      'email',
+      'firstName',
+      'lastName',
+      'name',
+      'phoneNumber',
+      'company',
+      'discountCode',
+      'discountPrice',
+      'amountPaid',
+      'status',
+      'popcornQuantities',
+    ];
+
+    const updateObject: any = {};
+    for (const field of allowedFields) {
+      if (updateData[field] !== undefined) {
+        if (
+          field === 'popcornQuantities' &&
+          typeof updateData[field] === 'object'
+        ) {
+          updateObject[field] = updateData[field];
+        } else {
+          updateObject[field] = updateData[field];
+        }
+      }
+    }
+
+    // Update the order
+    Object.assign(order, updateObject);
+    const updatedOrder = await order.save();
+
+    // Transform to match frontend IOrder interface
+    const popcornQuantities = updatedOrder.popcornQuantities || {
+      caramel: 0,
+      respresso: 0,
+      butter: 0,
+      cheddar: 0,
+      kettle: 0,
+    };
+
+    const orderData = {
+      orderId: updatedOrder.orderId || updatedOrder.uuid || '',
+      uuid: updatedOrder.uuid || '',
+      email: updatedOrder.email || '',
+      firstName: updatedOrder.firstName || '',
+      lastName: updatedOrder.lastName || '',
+      name: updatedOrder.name || '',
+      phoneNumber: updatedOrder.phoneNumber || '',
+      company: updatedOrder.company || '',
+      discountCode: updatedOrder.discountCode || '',
+      discountPrice: updatedOrder.discountPrice || 0,
+      amountPaid: updatedOrder.amountPaid || 0,
+      status: updatedOrder.status || 'Inquiry',
+      popcornQuantities,
+      submittedAt: updatedOrder.submittedAt
+        ? updatedOrder.submittedAt.toISOString()
+        : new Date().toISOString(),
+      createdAt: updatedOrder.createdAt
+        ? updatedOrder.createdAt.toISOString()
+        : new Date().toISOString(),
+      updatedAt: updatedOrder.updatedAt
+        ? updatedOrder.updatedAt.toISOString()
+        : new Date().toISOString(),
+    };
+
+    res.status(StatusCode.OK).json(orderData);
+  } catch (error: any) {
+    console.error('Error in updateOrder:', error);
+    next(ApiError.internal(`Error updating order: ${error.message}`));
+  }
+};
+
+export {
+  ingestTypeformOrders,
+  getAllOrders,
+  deleteAllOrders,
+  getOrderById,
+  updateOrder,
+};

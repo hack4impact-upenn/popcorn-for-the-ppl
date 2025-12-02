@@ -11,6 +11,7 @@ import HomePage from './Home/HomePage.tsx';
 import AdminDashboardPage from './AdminDashboard/AdminDashboardPage.tsx';
 import DashboardPage from './OrderDashboard/DashboardPage.tsx';
 import OrderManagementPage from './OrderDashboard/OrderManagementPage.tsx';
+import PricingManagementPage from './DiscountCodes/PricingManagementPage.tsx';
 import {
   UnauthenticatedRoutesWrapper,
   ProtectedRoutesWrapper,
@@ -63,6 +64,10 @@ function App() {
                     <Route
                       path="/order-management"
                       element={<OrderManagementPage />}
+                    />
+                    <Route
+                      path="/pricing-management"
+                      element={<PricingManagementPage />}
                     />
                   </Route>
                   <Route element={<AdminRoutesWrapper />}>
